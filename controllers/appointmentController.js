@@ -1,4 +1,5 @@
 const Appointment = require("../models/Appointment");
+const { sendEmail } = require("../services/emailService");
 
 // Create Appointment
 exports.createAppointment = async (req, res) => {
@@ -12,6 +13,11 @@ exports.createAppointment = async (req, res) => {
         .status(400)
         .json({ message: "This time slot is already booked." });
     }
+
+    const meetLink = `https://meet.jit.si/Appoint-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(7)}`;
+
     const newAppointment = new Appointment({
       name,
       date,
@@ -20,9 +26,13 @@ exports.createAppointment = async (req, res) => {
       phone,
       email,
       address,
+      meetLink,
     });
     await newAppointment.save();
-    res.status(201).json({ message: "Appointment booked successfully!" });
+
+    await sendEmail(name, email, date, time, meetLink);
+
+    res.status(201).json({ message: "Appointment booked!", meetLink });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error });
   }
